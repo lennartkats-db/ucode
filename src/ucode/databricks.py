@@ -665,7 +665,12 @@ def install_databricks_cli() -> None:
     ensure_databricks_cli_version()
 
 
-def install_ai_tools(agent_tokens: list[str], profile: str | None = None) -> None:
+def install_ai_tools(
+    agent_tokens: list[str],
+    profile: str | None = None,
+    *,
+    env_overrides: dict[str, str] | None = None,
+) -> None:
     """Install Databricks AI Tools for the given agents (e.g. ``claude-code``).
 
     Databricks AI Tools is the set of skills and plugins that teach coding
@@ -676,6 +681,8 @@ def install_ai_tools(agent_tokens: list[str], profile: str | None = None) -> Non
         return
 
     agents_arg = ",".join(agent_tokens)
+    env = os.environ.copy()
+    env.update(env_overrides or {})
     try:
         with spinner(f"Installing Databricks AI Tools for {agents_arg}..."):
             run(
@@ -683,6 +690,7 @@ def install_ai_tools(agent_tokens: list[str], profile: str | None = None) -> Non
                 + _profile_args(profile),
                 check=True,
                 capture_output=True,
+                env=env,
                 text=True,
                 timeout=300,
             )

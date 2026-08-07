@@ -67,15 +67,22 @@ class TestInstallAiToolsForAgents:
         monkeypatch.setattr(
             agents_mod,
             "install_ai_tools",
-            lambda agents, profile: captured.update(agents=agents, profile=profile),
+            lambda agents, profile, **kwargs: captured.update(
+                agents=agents, profile=profile, **kwargs
+            ),
         )
         return captured
 
-    def test_maps_supported_tools_and_drops_others(self, monkeypatch):
+    def test_maps_supported_tools(self, monkeypatch):
         captured = self._capture(monkeypatch)
-        # gemini and pi aren't supported by `databricks aitools`, so they drop.
         install_ai_tools_for_agents(["claude", "codex", "gemini", "pi"], {"profile": "prof"})
-        assert captured == {"agents": ["claude-code", "codex"], "profile": "prof"}
+        assert captured == {
+            "agents": ["claude-code", "codex", "gemini", "pi"],
+            "profile": "prof",
+            "env_overrides": {
+                "GEMINI_CLI_HOME": str(agents_mod.gemini.GEMINI_HOME_DIR),
+            },
+        }
 
     def test_installed_by_default(self, monkeypatch):
         # Opt-out: absent flag means install.

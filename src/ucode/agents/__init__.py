@@ -70,22 +70,30 @@ TOOL_ALIASES = {
 DEFAULT_TOOL = "codex"
 BUNDLE_VERSION = 1
 
-# ucode tool -> `databricks aitools` agent id. gemini/pi aren't supported.
+# ucode tool -> `databricks aitools` agent id.
 AITOOLS_AGENT_TOKENS = {
     "claude": "claude-code",
     "codex": "codex",
+    "gemini": "gemini",
     "opencode": "opencode",
     "copilot": "copilot",
+    "pi": "pi",
 }
 
 
 def install_ai_tools_for_agents(tools: list[str], state: dict) -> None:
-    """Install Databricks AI Tools for the coding agents that support them
-    (gemini/pi have no ``aitools`` support and are dropped)."""
+    """Install Databricks AI Tools for the coding agents that support them."""
     if state.get("databricks_ai_tools_enabled", True) is False:
         return
     agents = [AITOOLS_AGENT_TOKENS[tool] for tool in tools if tool in AITOOLS_AGENT_TOKENS]
-    install_ai_tools(agents, state.get("profile"))
+    if "gemini" in tools:
+        install_ai_tools(
+            agents,
+            state.get("profile"),
+            env_overrides={"GEMINI_CLI_HOME": str(gemini.GEMINI_HOME_DIR)},
+        )
+    else:
+        install_ai_tools(agents, state.get("profile"))
 
 
 def normalize_tool(tool: str) -> str:

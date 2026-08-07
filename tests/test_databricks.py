@@ -2038,6 +2038,19 @@ class TestInstallAiTools:
         cmd = calls[0]
         assert "--profile" in cmd and cmd[cmd.index("--profile") + 1] == "myprofile"
 
+    def test_applies_environment_overrides(self, monkeypatch):
+        captured = {}
+
+        def fake_run(args, **kwargs):
+            captured.update(kwargs)
+            return subprocess.CompletedProcess(args, 0, "Installed 1 skill.", "")
+
+        monkeypatch.setattr(db_mod, "run", fake_run)
+        monkeypatch.setenv("EXISTING_ENV", "kept")
+        install_ai_tools(["gemini"], env_overrides={"GEMINI_CLI_HOME": "/tmp/gemini-home"})
+        assert captured["env"]["GEMINI_CLI_HOME"] == "/tmp/gemini-home"
+        assert captured["env"]["EXISTING_ENV"] == "kept"
+
     def test_install_failure_is_non_fatal(self, monkeypatch):
         self._capture_run(monkeypatch, raises=subprocess.CalledProcessError(1, "databricks"))
         # Must not raise — AI Tools are best-effort.
